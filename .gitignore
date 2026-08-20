@@ -1,0 +1,86 @@
+# ---- Vivado ----
+*.jou
+*.log
+*.str
+*.xpr
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.srcs/
+*.gen/
+.Xil/
+vivado*.backup.jou
+vivado*.backup.log
+vivado_pid*.str
+webtalk*.jou
+webtalk*.log
+usage_statistics_webtalk*
+hs_err_pid*.log
+tight_setup_hold_pins.txt
+
+# ---- salidas del build no-project ----
+platform/*/build/out/
+*.bit
+*.bin
+*.mcs
+*.prm
+*.ltx
+*.dcp
+*.rpt
+
+# ---- MIG / IP generada ----
+platform/*/ip/**/
+!platform/*/ip/*.xci
+!platform/*/ip/*.prj
+
+# ---- simulacion ----
+*.vcd
+*.fst
+*.ghw
+*.wlf
+work/
+xsim.dir/
+transcript
+*.vvp
+
+# ---- ROMs y binarios con licencia de terceros: NUNCA al repo ----
+# BIOS del MSX, yrw801.rom (wavetable OPL4), packs, imagenes de disco.
+*.rom
+*.ROM
+pack_bios*.bin
+yrw801*
+
+# ---- referencia Tang 60K: SOLO fuentes, nunca salidas del Gowin IDE ----
+# reference/tang60k/ existe para poder LEER el core validado del 60K mientras
+# se porta (plan §5.2). Lo generado por gw_sh no pinta nada en un repo de
+# Kintex-7: son ~150 MB, y project.pr supera el limite duro de 100 MB de
+# GitHub. Se conserva en disco; simplemente no entra en git.
+reference/**/impl/
+reference/**/*.fs
+reference/**/*.vg
+reference/**/*.pr
+reference/**/*.p
+reference/**/*.binx
+reference/**/*.db
+reference/**/*.prj
+reference/**/*.gprj.user
+reference/**/*.html
+reference/**/*.timing_paths
+reference/**/temp/
+# IP de reloj/DDR3 generada por Gowin: se sustituye por MMCM/MIG (plan §5.3)
+reference/tang60k/ddr3/
+reference/tang60k/msx_console60k/src/gowin_pll/
+
+# ---- artefactos de herramientas locales ----
+ruvector.db
+.codegraph/
+
+# ---- sistema ----
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.vscode/
+.idea/

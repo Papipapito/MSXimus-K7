@@ -1,0 +1,24 @@
+# Las fuentes HDL cruzan Windows (Vivado GUI) y Linux/WSL (openXC7, simulacion).
+# LF en el repo y en el arbol de trabajo: las herramientas abiertas y los
+# scripts .sh no toleran bien CRLF, y un diff de fin de linea enmascara un
+# diff real de RTL.
+*.v      text eol=lf
+*.vh     text eol=lf
+*.sv     text eol=lf
+*.svh    text eol=lf
+*.vhd    text eol=lf
+*.vhdl   text eol=lf
+*.xdc    text eol=lf
+*.sdc    text eol=lf
+*.cst    text eol=lf
+*.tcl    text eol=lf
+*.sh     text eol=lf
+*.py     text eol=lf
+*.md     text eol=lf
+
+# Binarios: nunca tocar
+*.rom    binary
+*.bin    binary
+*.bit    binary
+*.hex    binary
+*.pdf    binary
