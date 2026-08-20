@@ -1,7 +1,7 @@
 <h1 align="center">MSXimus-K7</h1>
 <p align="center"><b>Un MSX2+ en FPGA sobre QMTECH Kintex-7 XC7K325T</b></p>
 <p align="center">
-  <img alt="estado" src="https://img.shields.io/badge/estado-Hito%200%20·%20andamiaje-orange">
+  <img alt="estado" src="https://img.shields.io/badge/estado-Hito%200%20superado-brightgreen">
   <img alt="fpga" src="https://img.shields.io/badge/FPGA-Xilinx%20XC7K325T-blue">
   <img alt="licencia" src="https://img.shields.io/badge/licencia-GPLv3-orange">
 </p>
@@ -28,18 +28,34 @@ debe poder romperlo.
 
 ## Estado
 
-**Hito 0 — andamiaje.** El MSX todavía no compila para esta placa. Lo que hay:
+**Hito 0 — superado el 2026-08-20.** El criterio de salida era *«`write_bitstream`
+termina sin errores»*, y termina:
+
+```
+Vivado 2026.1 BASIC · xc7k325tffg676-1
+synth → opt → place → phys_opt → route → bitstream
+0 errores · 0 critical warnings · DRC sin violaciones
+WNS = 33,885 ns    WHS = 0,114 ns
+7 LUTs · 28 FFs · 1 MMCM · 1 BUFG · 3 IOBs
+MMCME2_ADV_X0Y2 → BUFGCTRL_X0Y0 → 37,037 ns = 27,000 MHz exactos
+```
+
+Ese último renglón es el primer escalón de la cascada de relojes del §3 del
+plan, y ya no es un cálculo: es lo que implementó el P&R.
 
 - [x] Estructura `core/` + `platform/` + `reference/`, ya poblada
 - [x] `board.xdc` con reloj y los tres PMOD **verificados contra el esquemático**
 - [x] Build no-project de Vivado, reproducible
 - [x] `top.sv` del Hito 1 (parpadeo desde el MMCM)
-- [x] **Toolchain resuelta**: Vivado **2026.1 nivel BASIC** (gratuito, junio de
-      2026) cubre todas las 7 Series, XC7K325T incluido. El plan va tal cual.
+- [x] **Toolchain resuelta y verificada de primera mano**: Vivado **2026.1 nivel
+      BASIC** (gratuito) cubre todas las 7 Series; `xc7k325tffg676-1` presente
 - [ ] Pines de LEDs y botones — **sin verificar**, ver `board.xdc`
-- [ ] Confirmar de primera mano que `xc7k325tffg676-1` aparece en la lista de
-      dispositivos al instalar
+- [ ] Cadena de simulación abierta (Icarus + GHDL + Verilator) — el core es
+      mixto VHDL/Verilog y XSIM viene capado en BASIC
 - [ ] Programador JTAG — J1 es cabecera; la placa casi seguro no lleva USB-JTAG
+
+**Hito 1 — bloqueado por hardware.** El bitstream existe; falta la placa y un
+programador JTAG para cargarlo y medir el parpadeo.
 
 El plan completo, con los nueve hitos y sus criterios de salida:
 [`docs/PORT_K325T_PLAN.md`](docs/PORT_K325T_PLAN.md).

@@ -179,7 +179,7 @@ Cuatro MMCM, todos con salidas **exactas**:
 
 | MMCM | Entrada | D | M | VCO | Salidas (divisor) |
 |---|---|---|---|---|---|
-| **REF** | 50 MHz | 1 | 13,500 | 675,00 | **27,000** (÷25) |
+| **REF** | 50 MHz | 1 | 13,500 | 675,00 | **27,000** (÷25) ✅ **implementado** |
 | **SYS** | 27 MHz | 1 | 40,000 | 1080,00 | **135,00** (÷8) · **108,00** (÷10) · **54,00** (÷20) · **27,00** (÷40) |
 | **VID** | 27 MHz | 1 | 27,500 | 742,50 | **74,250** (÷10) · **371,250** (÷2) |
 | **WAVE** | 50 MHz | 1 | 12,000 | 600,00 | **37,500** (÷16) |
@@ -191,6 +191,20 @@ costó sangre conseguir (ver los comentarios de `top.v:277-310` sobre el
 
 > `WAVE` (37,5 MHz, OPL4, Hito 8) lleva MMCM propio porque no sale del VCO de
 > 1080 (1080/37,5 = 28,8, no entero). Igual que en Gowin tenía su propia salida.
+
+> **Presupuesto de MMCM — comprobado el 2026-08-20.** El XC7K325T tiene
+> **10 `MMCME2_ADV`** (más los `PLLE2_ADV`, que sirven para lo que no necesite
+> fase fina). La cascada de arriba gasta **4 de 10**. Hay margen, pero no es
+> infinito: conviene no repartir MMCM a capricho por los submódulos al portar
+> los `pll_*.v` del §5.2 —`pll_86`, `pll_3375`, `pll_12`— sino ver cuáles
+> pueden colgar de una salida ya existente. En la 60K esto no se planteaba
+> porque los `rPLL` de Gowin son otro recurso y otra cuenta.
+
+> **Escalón REF verificado en implementación** (Hito 0, 2026-08-20): el MMCM
+> cayó en `MMCME2_ADV_X0Y2`, salida por `BUFGCTRL_X0Y0`, y el informe de
+> relojes post-route da **37,037 ns = 27,000 MHz exactos**. La entrada de
+> 50 MHz entra por `IOB_X0Y126` = pin **F22**, como decía §1.1. El resto de la
+> cascada (SYS, VID, WAVE) sigue sin implementar.
 
 > A 371,25 MHz el enlace TMDS son 742,5 Mb/s por carril, dentro de lo que da un
 > `OSERDESE2` en banco HR de un K7 **-1**. Confirmar con el informe de timing
@@ -320,11 +334,17 @@ intercambiando las mitades del `OBUFDS` o invirtiendo el dato TMDS.
 Cada hito tiene un **criterio de salida binario**. No se pasa al siguiente sin
 cumplirlo. Nada de integrar dos subsistemas sin validar a la vez.
 
-### Hito 0 — Andamiaje (sin hardware)
+### Hito 0 — Andamiaje (sin hardware) ✅ **SUPERADO 2026-08-20**
 - Estructura `platform/qmtech_k7/` separada de `core/`.
 - Script de build Vivado no-project reproducible.
 - `board.xdc` con: reloj 50 MHz en F22, 3 LEDs, 2 botones, los 3 PMOD.
-- **Salida**: `write_bitstream` termina sin errores.
+- **Salida**: `write_bitstream` termina sin errores. ✅
+
+> Resultado: 0 errores, 0 critical warnings, DRC sin violaciones.
+> **WNS = 33,885 ns · WHS = 0,114 ns.** Utilización de referencia (que es
+> el "cero" contra el que se medirá todo lo que venga): 7 LUTs, 28 FFs,
+> 1 MMCM, 1 BUFG, 3 IOBs. Los LEDs y botones siguen sin constreñir: el
+> parpadeo sale por `pmod1[0]`, ver `board.xdc`.
 
 ### Hito 1 — Vida
 - Parpadeo de LED desde el MMCM_SYS (§3), no desde el pad.
