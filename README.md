@@ -136,6 +136,16 @@ Python, Tcl y binutils en el `PATH` y ensombrece los del sistema.
 > GHDL necesita un compilador de C para enlazar; si no, falla con
 > `installation problem: cc not found`. Ubuntu 24.04 ya trae `gcc`.
 
+**Distro única: `Ubuntu-24.04` (noble, LTS hasta 2029), y es la de por defecto**,
+así que `wsl` a secas ya cae ahí. Lleva `gcc`, `make`, `git`, `python3`, Rust
+(`cargo`/`rustc`) y OSS CAD Suite en `~/oss-cad-suite`.
+
+> Si alguna vez vuelve a aparecer una distro llamada `Ubuntu-22.04` en este PC:
+> **era en realidad 23.10 "mantic" y está End-Of-Life**. Sus paquetes ya no
+> están en `archive.ubuntu.com` y cualquier `apt install` muere en una pared de
+> 404. Se retiró el 2026-08-20 junto con una 26.04 vacía; ambas quedaron
+> respaldadas en `D:\wsl-backup\*.tar` por si hiciera falta rescatar algo.
+
 ### Estado de la simulación por módulo
 
 Verificado el 2026-08-20 contra el core heredado:
