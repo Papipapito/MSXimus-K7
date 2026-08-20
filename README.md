@@ -110,6 +110,23 @@ la simulación va por Icarus/GHDL/Verilator, como ya venían los `tb/` heredados
 y solo hay una ILA con 5 sondas, por lo que la depuración en placa se apoya en
 `dbg_uart.v` (Hito 3) antes que en ChipScope.
 
+## Simular
+
+La simulación **no** va por Vivado. Va por la cadena abierta en WSL2, por dos
+razones: XSIM viene capado en BASIC, y buena parte del core es **VHDL** —G80A
+(el Z80 entero), `PSG_YM2149`, el VDP V9958, `src/ocm/`— que Icarus no toca.
+
+```bash
+wsl -d Ubuntu-22.04 -- bash -lc 'source ~/oss-cad-suite/environment && bash /mnt/c/Users/alber/proyectosAI/msx/MSXimus-K7/core/video720/tb/run.sh'
+```
+
+Herramientas: **OSS CAD Suite** (`~/oss-cad-suite/`) — Icarus 14.0, GHDL 7.0-dev,
+Verilator 5.051, GTKWave, Yosys, cocotb. Ojo: **la build de Windows de OSS CAD
+Suite no incluye GHDL**; de ahí que la simulación viva en WSL y no nativa.
+
+> GHDL necesita un compilador de C para enlazar. Si sale
+> `installation problem: cc not found`: `sudo apt install -y build-essential`.
+
 ## Estructura
 
 ```

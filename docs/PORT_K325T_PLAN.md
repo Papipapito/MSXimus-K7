@@ -482,20 +482,85 @@ construye — y empuja hacia donde este proyecto ya estaba:
   decisión, que era de orden lógico, ahora también es de licencia.
 - **Renovación anual** del fichero de licencia.
 
-### 9.1 En este orden
+### 9.1 Hecho el 2026-08-20 (todo sin hardware)
 
-1. **Instalar Vivado 2026.1 BASIC y confirmar que `xc7k325tffg676-1` sale en la
-   lista de dispositivos.** Es la verificación de primera mano del riesgo 6;
-   todo lo anterior son fuentes secundarias.
-2. Montar la cadena de simulación abierta (Icarus, GHDL, Verilator, GTKWave) y
-   revalidar un `tb/` heredado del 60K como prueba de que funciona.
-3. **Hito 0 completo**: `write_bitstream` sin errores. No hace falta la placa.
-4. Cuando llegue la placa: serigrafía de J11/J12/J13 contra el esquemático,
-   serigrafía del PMOD HDMI (qué par es CLK y cuáles D0/D1/D2), y si `VCCO_12`
-   es seleccionable por jumper.
-5. Conseguir un programador JTAG: J1 es una cabecera, y la placa —a diferencia
-   de las Tang— casi seguro **no lleva USB-JTAG integrado**. Confirmar al
-   recibirla.
+- [x] Vivado 2026.1 BASIC instalado y licenciado; `xc7k325tffg676-1` confirmado
+      presente. Riesgo 6 cerrado de primera mano.
+- [x] **Hito 0 superado**: bitstream limpio, WNS 33,885 / WHS 0,114.
+- [x] Escalón REF de la cascada de relojes verificado en implementación
+      (27,000 MHz exactos, §3).
+- [x] Presupuesto de BRAM confirmado contra la base de datos del dispositivo:
+      445 × 36 Kb = 1,95 MB (§4.2).
+- [x] Cadena de simulación abierta montada en WSL2 (§9.2).
+
+A partir de aquí **todo lo que queda necesita hardware**. Este apartado es el
+guion para ese día.
+
+---
+
+### 9.2 Lista de compra
+
+| Qué | Imprescindible para | Notas |
+|---|---|---|
+| **Programador JTAG** | Hito 1 en adelante | J1 es una cabecera y la placa, a diferencia de las Tang, **casi seguro no lleva USB-JTAG integrado** — confirmar al recibirla. Digilent HS2/HS3, un FT2232H, o un clon de Platform Cable USB II. Los drivers ya están instalados con Vivado. |
+| **PMOD HDMI/DVI diferencial** | Hito 2 | Tiene que ser de los que cablean **pin N con pin N+6** como par, que es el convenio de esta placa (§1.3). Va en **J13**. |
+| **Fuente de alimentación** | Todo | Riesgo 7: el pack citaba 6 V/2 A. Con K325T + DDR3 + PMOD hay que **medir consumo real** antes de darla por buena. |
+| PMOD microSD | Hito 6 | En **J12** |
+| PMOD USB | Hito 5 | En **J11** |
+
+### 9.3 El día que llegue la placa — **antes de enchufarla**
+
+Nada de esto necesita alimentar la placa, y todo puede invalidar el `board.xdc`.
+El episodio de los USB-A de la Console 60K (`BASE_MINIMA_60K_PLAN.md` §A.1,
+*"el esquemático de Sipeed está MAL"*) es la razón de que este apartado exista.
+
+1. **Contar y orientar los PMOD.** Localizar el pin 1 de J11/J12/J13 en la
+   serigrafía y comprobar que la numeración coincide con la del esquemático
+   (§1.3). Si el conector real numera al revés, **todo el `board.xdc` está del
+   revés** y es mejor descubrirlo aquí.
+2. **`VCCO_12`.** Ver si hay jumper de selección de tensión. Afecta a LEDs,
+   botones y a las ~40 E/S de JP5.
+3. **LEDs y botones con el polímetro en continuidad.** Están marcados `[TODO]`
+   en `board.xdc` porque sus etiquetas no se podían deducir del PDF. Sacarlos
+   ahora evita depender del PMOD para señalizar.
+4. **Serigrafía del PMOD HDMI.** Qué par lleva CLK y cuáles D0/D1/D2, **y la
+   polaridad**: en J13 los pares pin1/7 y pin2/8 tienen la mitad *N* en el pin
+   bajo (§6). Si el PMOD no deja recolocar, se corrige en RTL.
+5. **Consumo.** Medir antes de confiar en la fuente (riesgo 7).
+
+> Si 1 o 2 salen distintos de lo previsto, **actualizar `board.xdc` y rehacer el
+> Hito 0 antes de seguir**. El bitstream tarda un minuto; un pin mal puesto
+> puede costar un banco de E/S.
+
+### 9.4 Primer encendido — Hito 1
+
+El bitstream **ya está generado** (`platform/qmtech_k7/build/out/top.bit`). El
+Hito 1 no es compilar: es medir.
+
+1. Conectar el JTAG, abrir el Hardware Manager, comprobar que el dispositivo
+   **se detecta como `xc7k325t`** antes de programar nada.
+2. Programar `top.bit`. **`DONE` debe subir.**
+3. Medir con el polímetro en continua:
+   - **`pmod1[0]`** (J11 pin 1) debe oscilar entre ~0 y ~3,3 V. Con un LED y su
+     resistencia contra GND (J11 pin 5), parpadeo visible.
+   - **`pmod1[1]`** (J11 pin 2) debe quedarse **fijo alto** = MMCM enganchado.
+4. **Criterio de salida**: el parpadeo es de **1 Hz medido**, no "parece que
+   parpadea". Si sale 1 Hz exacto, está confirmada de golpe toda la cadena:
+   cristal de 50 MHz → F22 → MMCM → 27 MHz → divisor.
+
+> Si `pmod1[1]` está bajo, el MMCM no engancha: mirar el reloj de entrada antes
+> que el RTL. Si parpadea a ~1,85 Hz, el MMCM está dando 50 MHz sin multiplicar.
+
+### 9.5 Después, en orden, sin saltarse criterios de salida
+
+**Hito 2 (HDMI) es el siguiente, y es a propósito el más arriesgado**: es lo
+único con incertidumbre física real. Ahí se cierra además la duda de `PUDC_B`
+(riesgo 1) — el primer criterio de salida que de verdad puede tumbar el reparto
+de PMOD del §6.
+
+El resto sigue el §7 tal cual: 3 (flash + UART) → 4 (**MSX mínimo en BRAM, el
+primer BASIC en pantalla**) → 5 (teclado y PSG) → 6 (SD y Nextor) → 7 (DDR3) →
+8 (audio completo y V9968) → 9 (CM4, opcional).
 
 ---
 
