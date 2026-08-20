@@ -117,15 +117,49 @@ razones: XSIM viene capado en BASIC, y buena parte del core es **VHDL** —G80A
 (el Z80 entero), `PSG_YM2149`, el VDP V9958, `src/ocm/`— que Icarus no toca.
 
 ```bash
-wsl -d Ubuntu-22.04 -- bash -lc 'source ~/oss-cad-suite/environment && bash /mnt/c/Users/alber/proyectosAI/msx/MSXimus-K7/core/video720/tb/run.sh'
+wsl -d Ubuntu-24.04 -- bash -lc 'source ~/oss-cad-suite/environment && bash /mnt/c/Users/alber/proyectosAI/msx/MSXimus-K7/core/video720/tb/run.sh'
 ```
 
 Herramientas: **OSS CAD Suite** (`~/oss-cad-suite/`) — Icarus 14.0, GHDL 7.0-dev,
 Verilator 5.051, GTKWave, Yosys, cocotb. Ojo: **la build de Windows de OSS CAD
 Suite no incluye GHDL**; de ahí que la simulación viva en WSL y no nativa.
 
-> GHDL necesita un compilador de C para enlazar. Si sale
-> `installation problem: cc not found`: `sudo apt install -y build-essential`.
+Dentro de WSL hay una función `ossenv` que activa la cadena **bajo demanda**:
+
+```bash
+ossenv          # activa iverilog, ghdl, verilator, yosys, gtkwave
+```
+
+No se hace `source` en el arranque **a propósito**: OSS CAD Suite mete su propio
+Python, Tcl y binutils en el `PATH` y ensombrece los del sistema.
+
+> GHDL necesita un compilador de C para enlazar; si no, falla con
+> `installation problem: cc not found`. Ubuntu 24.04 ya trae `gcc`.
+
+### Estado de la simulación por módulo
+
+Verificado el 2026-08-20 contra el core heredado:
+
+| Módulo | Herramienta | Estado |
+|---|---|---|
+| `core/video720/msx2hdmi.sv` | Icarus | ✅ **20.671.200 checks, 0 errores** (NTSC/PAL, 4:3 y 16:9) |
+| `core/G80A/` — **el Z80 entero** | GHDL | ✅ los 6 ficheros analizan y `T80s` **elabora** |
+| `core/v9968/vdp.v` | Verilator | ✅ elabora 22 módulos; solo avisos informativos |
+| `core/denoise/`, `core/src/ocm/fifo.vhd` | GHDL | ✅ con `--std=93c` a secas |
+| `core/PSG_YM2149/YM2149.vhdl` | GHDL | ⚠ pendiente |
+| `core/monostable/` | GHDL | ⚠ pendiente |
+
+**El core necesita flags de GHDL distintos según el módulo**, y conviene saberlo
+antes de pelearse con ello. G80A los necesita así:
+
+```bash
+ghdl -a --std=93c --ieee=synopsys -frelaxed-rules core/G80A/*.vhd
+```
+
+`YM2149.vhdl` **exige** `--ieee=synopsys` (usa `std_logic_unsigned`, que sin esa
+opción no existe), pero con ella su línea 155 se vuelve ambigua: el `=` queda
+sobrecargado entre `std_logic_unsigned` y `std_logic_1164`. Es un choque clásico
+de VHDL heredado, no un fallo del fichero.
 
 ## Estructura
 
