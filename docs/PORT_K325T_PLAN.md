@@ -387,13 +387,12 @@ cumplirlo. Nada de integrar dos subsistemas sin validar a la vez.
 - **Invariante**: la máquina debe seguir funcionando **sin CM4 puesto**.
 
 ### Fuera de plan (por ahora)
-- ~~**OpenXC7**~~ → **reevaluado, ver §9**: la premisa de este apartado era
-  *"Vivado primero como referencia de timing"*. Esa premisa se cayó el
-  2026-08-20 al cerrar el riesgo 6: Vivado para el K325T no es gratis. OpenXC7
-  deja de ser "una segunda cadena de herramientas" para ser, posiblemente, la
-  primera.
-- **UberDDR3**: sigue fuera hasta el Hito 7; la estrategia BRAM-primero no lo
-  necesita antes.
+- **OpenXC7 / UberDDR3**: interesante, pero es una segunda cadena de
+  herramientas sobre un puerto aún no validado. Vivado primero como referencia
+  de timing; el flujo abierto cuando haya una base estable con la que comparar.
+  *(Reconfirmado el 2026-08-20 al cerrar el riesgo 6: con BASIC gratis, Vivado
+  sigue siendo la referencia. OpenXC7 queda como plan B real y documentado si
+  el nivel gratuito estorbase más adelante.)*
 - **1080p**, R800/Turbo-R, V9990: para cuando haya utilización real medida.
 
 ---
@@ -414,13 +413,29 @@ cumplirlo. Nada de integrar dos subsistemas sin validar a la vez.
    No hay ratio fijo. El K325T tiene ~203,8 K LUT6 frente a ~59,9 K LUT4 del
    GW5AT-60; sobra margen, pero la cifra real sale de P&R, no de una regla de
    tres.
-6. ~~**Licencia de Vivado para el XC7K325T.**~~ **CERRADO — 2026-08-20, y la
-   respuesta es la mala.** Verificado contra la tabla oficial de dispositivos
-   de AMD (UG973, *Supported Devices*): **Vivado ML Standard (la edición
-   gratuita) sólo cubre `XC7K70T` y `XC7K160T` de toda la familia Kintex-7.
-   El `XC7K325T` exige Vivado ML Enterprise** (node-locked desde ~4.400 USD).
-   No es un matiz de versión ni un hilo de foro viejo: es la tabla del
-   fabricante. Consecuencias en §9.
+6. ~~**Licencia de Vivado para el XC7K325T.**~~ **CERRADO — 2026-08-20, y sale
+   bien.** El aviso del plan («no fiarse de hilos de foro antiguos») era
+   correcto, y se aplica también a la documentación antigua: la tabla de
+   UG973 2024.1 dice que Vivado ML Standard sólo cubre `XC7K70T` y `XC7K160T`,
+   y **ese dato ya no vale**. En **Vivado 2026.1** (junio de 2026) AMD sustituyó
+   Standard/Enterprise por niveles —BASIC, CORE, PRO, ENTERPRISE, GOLD— y
+   **BASIC es gratuito y cubre todas las 7 Series, Kintex-7 incluido**. El
+   `XC7K325T` entra. AMD además rectificó públicamente el plan inicial de dejar
+   BASIC sólo para Windows: Linux sigue en todos los niveles.
+
+   **El plan sigue en pie tal como está escrito**: MIG, Clocking Wizard y
+   `OSERDESE2` están disponibles. Lo que BASIC sí recorta, y afecta al método:
+
+   | Recorte de BASIC | Dónde duele | Mitigación |
+   |---|---|---|
+   | **XSIM limitado** | Simular el core MSX entero | Icarus + GHDL + Verilator, que es como ya están montados los `tb/` heredados |
+   | **1 sola ILA, 5 sondas (1024 bits)** | Depurar en placa los Hitos 2 y 4 | `dbg_uart.v` (Hito 3), que además es más barato en recursos |
+   | **Renovación anual** | Se suspende la herramienta si caduca | Apuntarlo en el calendario |
+
+   > Verificación definitiva pendiente y trivial: instalar y comprobar que
+   > `xc7k325tffg676-1` aparece en la lista de dispositivos. Hasta entonces
+   > esto son fuentes secundarias, no la tabla del fabricante leída de primera
+   > mano.
 7. **Alimentación.** El pack cita 6 V/2 A. Con K325T + DDR3 + 3 PMOD + (quizá)
    CM4, medir consumo antes de dar por buena la fuente.
 
@@ -428,36 +443,39 @@ cumplirlo. Nada de integrar dos subsistemas sin validar a la vez.
 
 ## 9. Lo primero que hay que hacer
 
-### 9.0 La decisión de toolchain — bloqueante, y ya no es "verificar" sino "elegir"
+### 9.0 Toolchain — decidido: Vivado 2026.1 BASIC
 
-El riesgo 6 está cerrado y salió mal: **Vivado ML Standard no cubre el
-XC7K325T**. Sólo hay tres salidas, y hay que escoger *antes* de escribir RTL
-porque cambian el `build.tcl`, los `.xdc` y qué primitivas se pueden instanciar:
+Riesgo 6 cerrado a favor. **Vivado 2026.1, nivel BASIC (gratuito), cubre el
+XC7K325T.** No hay que elegir cadena de herramientas ni cambiar de placa: el
+plan de §3 (MMCM), §5.3 (`OSERDESE2`, `OBUFDS`, MIG) y §7 (los nueve hitos) va
+tal cual.
 
-| Vía | Coste | Qué implica |
-|---|---|---|
-| **A · Vivado ML Enterprise** | ~4.400 USD node-locked | El plan tal cual: MIG, Clocking Wizard, `OSERDESE2`, informes de timing de referencia. Difícil de justificar para esto. |
-| **B · OpenXC7** (yosys + nextpnr-xilinx + prjxray) | 0 | Soporta K325T. Pero **no hay MIG** (→ UberDDR3 en el Hito 7) y el *timing closure* es más pobre — justo lo que más aprieta a 371,25 MHz en el Hito 2. Linux/WSL. |
-| **C · Bajar de placa** a XC7K160T o Artix-7 | coste de placa | Devuelve Vivado gratis y todo el plan intacto. Pero el K160T tiene ~11,7 Mb de BRAM: **sigue cumpliendo la tesis BRAM-primero de §4.2 hasta el Hito 6.** |
+Lo único que el nivel gratuito cambia es **cómo se verifica**, no qué se
+construye — y empuja hacia donde este proyecto ya estaba:
 
-> **Lo que NO cambia con ninguna de las tres**: §1 (pinout del esquemático),
-> §4 (BRAM primero), §5 (mapa de dependencias) y §7 (el orden de los hitos).
-> El trabajo de análisis está hecho y es reutilizable. Lo que cambia es la
-> herramienta que lo materializa.
+- **Simulación fuera de Vivado.** XSIM en BASIC es "limitado". Da igual: los
+  bancos de pruebas heredados del 60K (`core/video720/tb/run.sh`) ya son de
+  **Icarus**, y el core es mixto VHDL+Verilog, que Icarus solo no cubre →
+  **Icarus + GHDL + Verilator**.
+- **Depuración por UART antes que por ILA.** BASIC da **una sola ILA con 5
+  sondas**. El Hito 3 ya pone `dbg_uart.v` justo por delante del MSX: esa
+  decisión, que era de orden lógico, ahora también es de licencia.
+- **Renovación anual** del fichero de licencia.
 
-> ⚠ Si se elige **B**, el Hito 2 sube al primer puesto de riesgo: el HDMI a
-> 742,5 Mb/s por carril con `OSERDESE2` es exactamente el caso donde un P&R
-> abierto puede no cerrar. Plan B dentro del plan B: bajar a 480p/576p, que
-> además es más "MSX" que 720p.
+### 9.1 En este orden
 
-### 9.1 Después de decidir, y en este orden
-
-1. Confirmar en la placa física la serigrafía de J11/J12/J13 y comprobar que la
-   numeración de pines del esquemático coincide con el conector real.
-2. Leer la serigrafía del PMOD HDMI: qué par es CLK y cuáles D0/D1/D2.
-3. Comprobar si `VCCO_12` es seleccionable por jumper (afecta a LEDs/botones y
-   a las 40 E/S de JP5).
-4. Entonces sí: Hito 0.
+1. **Instalar Vivado 2026.1 BASIC y confirmar que `xc7k325tffg676-1` sale en la
+   lista de dispositivos.** Es la verificación de primera mano del riesgo 6;
+   todo lo anterior son fuentes secundarias.
+2. Montar la cadena de simulación abierta (Icarus, GHDL, Verilator, GTKWave) y
+   revalidar un `tb/` heredado del 60K como prueba de que funciona.
+3. **Hito 0 completo**: `write_bitstream` sin errores. No hace falta la placa.
+4. Cuando llegue la placa: serigrafía de J11/J12/J13 contra el esquemático,
+   serigrafía del PMOD HDMI (qué par es CLK y cuáles D0/D1/D2), y si `VCCO_12`
+   es seleccionable por jumper.
+5. Conseguir un programador JTAG: J1 es una cabecera, y la placa —a diferencia
+   de las Tang— casi seguro **no lleva USB-JTAG integrado**. Confirmar al
+   recibirla.
 
 ---
 

@@ -34,10 +34,12 @@ debe poder romperlo.
 - [x] `board.xdc` con reloj y los tres PMOD **verificados contra el esquemático**
 - [x] Build no-project de Vivado, reproducible
 - [x] `top.sv` del Hito 1 (parpadeo desde el MMCM)
+- [x] **Toolchain resuelta**: Vivado **2026.1 nivel BASIC** (gratuito, junio de
+      2026) cubre todas las 7 Series, XC7K325T incluido. El plan va tal cual.
 - [ ] Pines de LEDs y botones — **sin verificar**, ver `board.xdc`
-- [ ] **Toolchain sin decidir — bloqueante.** Vivado ML Standard (el gratuito)
-      **no** soporta el XC7K325T: de Kintex-7 sólo cubre el 70T y el 160T. Las
-      tres salidas están en [`docs/PORT_K325T_PLAN.md` §9.0](docs/PORT_K325T_PLAN.md).
+- [ ] Confirmar de primera mano que `xc7k325tffg676-1` aparece en la lista de
+      dispositivos al instalar
+- [ ] Programador JTAG — J1 es cabecera; la placa casi seguro no lleva USB-JTAG
 
 El plan completo, con los nueve hitos y sus criterios de salida:
 [`docs/PORT_K325T_PLAN.md`](docs/PORT_K325T_PLAN.md).
@@ -85,6 +87,12 @@ vivado -mode batch -source platform/qmtech_k7/build/build.tcl
 
 Salidas e informes en `platform/qmtech_k7/build/out/`. El script avisa si el
 timing no cierra: **los informes de P&R mandan sobre cualquier estimación**.
+
+Vale **Vivado 2026.1 en su nivel BASIC**, que es gratuito. Dos matices del
+nivel gratuito que marcan el método del proyecto: XSIM viene limitado —por eso
+la simulación va por Icarus/GHDL/Verilator, como ya venían los `tb/` heredados—
+y solo hay una ILA con 5 sondas, por lo que la depuración en placa se apoya en
+`dbg_uart.v` (Hito 3) antes que en ChipScope.
 
 ## Estructura
 
